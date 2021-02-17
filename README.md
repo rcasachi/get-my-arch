@@ -1,71 +1,93 @@
 # get-my-arch
+
 Step-by-step to get my archlinux configuration
 
 ## Get Arch
-_to be done_
+
+1. Download Arch Linux .iso at <http://archlinux.org/download/>
+2. Create a live usb and boot:
+
+```bash
+dd bs=4M if=/home/Downloads/archlinux-2020.11.01-x86_64 of=/dev/sdb status=progress && sync
+```
 
 ## Install Arch
+
 1. Insert arch boot disk
-2. Set the partitions of the disk:
-  - `fdisk /dev/sda`
-    - d (remove all partitions)
-    - n (create a new partition)
-    - p (select primary partition)
-    - 1 (select partition as 1)
-    - Enter, Enter (double enter to select automatic partition size and sector)
-    - Yes (remove signature)
-    - W (write partition table)
-3. Create a system file: `mkfs.ext4 /dev/sda1``
-4. Select an arch mirror:
+2. Setup the keyboard layout:
+
 ```bash
-pacman –Syy
-pacman –S reflector (para instalar o reflector)
-cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.bak
-reflector -c "BR" -f 12 -l 10 -n 12 --save /etc/pacman.d/mirrorlist
+# list all available keyboard layout
+ls /usr/share/kbd/keymaps/**/*.map.gz
+
+# load the keyboard layout
+loadkeys br-abnt2.map.gz
 ```
-5. Install arch:
+
+3. Set the partitions of the disk:
+
+- list all partitions: `fdisk -l`
+- start cfdisk tool: `cfdisk /dev/sda`
+- create three partition (one for arch linux, boot and another for swap area):
+
+  - Delete all partitions
+  - Add new partition for arch and define the partition size
+  - Add another partition for swap and define the partition size (it should be twice the RAM size)
+  - Define its type as Linux swap
+  - Add another partition for bios boot and define the partition size
+  - Define its type as BIOS Boot
+  - Choose `write` option to write the partition table
+
+4. Create a system file: `mkfs.ext4 /dev/sda1`
+5. Create a swap file system: `mkswap /dev/sda2`
+6. Mount the root file system: `mount /dev/sda1 /mnt`
+7. Turn on the swap: `swapon /dev/sda2`
+8. Install the base system: `pacstrap /mnt base linux linux-firmware vim nano wget`
+9. Create the filesystem table: `genfstab -U /mnt >> /mnt/etc/fstab`
+10. Login as root to newly installed Arch: `arch-chroot /mnt`
+11. Configure timezone: `ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime`
+12. Generate Locale File:
+
 ```bash
-mount /dev/sda1 /mnt 
-pacstrap /mnt base linux linux-firmware vim nano wget
-```
-6. Configure arch after installation:
-```bash
-# Create a fstab file
-genfstab -U /mnt >> /mnt/etc/fstab
-```
-```bash
-# Access the disk
-arch-chroot /mnt
-```
-```bash
-# Set timezone
-timedatectl set-timezone America/Sao_Paulo
-nano /etc/locale.gen
-# Uncomment line of timestamp, for instance: pt_BR.UTF-8
 locale-gen
-echo LANG=pt_BR.UTF-8 > /etc/locale.conf
-export LANG=pt_BR.UTF-8
+echo "LANG=pt_BR.UTF-8" > /etc/locale.conf
 ```
+
+13. Install DHCP: `pacman -S dhcpcd`
+14. Create a hostname: `echo [hostname] > /etc/hostname`
+15. Create a hostname file:
+
 ```bash
-# Configure host and password
-echo [hostname] > /etc/hostname
-touch /etc/hosts
 nano /etc/hosts
 
 # type:
-127.0.0.1    localhost 
-::1          localhost 
-127.0.1.1    [hostname]
-
-# generate a new password
-passwd
+127.0.0.1    localhost
+::1          localhost
+127.0.0.1    [hostname]
 ```
+
+16. Enable DHCP: `systemctl enable dhcpcd`
+17. Generate root password: `passwd`
+18. Create GRUB boot loader:
+
 ```bash
-# Install grub
-pacman -S grub
+pacman -S grub os-prober
 grub-install /dev/sda
 grub-mkconfig -o /boot/grub/grub.cfg
 ```
+
+19. Restart without boot disk:
+
+```bash
+# Last steps
+exit
+shutdown now
+```
+
+## Install KDE
+
+1. Create a sudo user:
+
 ```bash
 # Create a sudo user
 useradd -m [user]
@@ -75,33 +97,78 @@ EDITOR=nano visudo
 
 # Add the following line after root
 [user] ALL=(ALL) ALL
-
-# Installing KDE Plasma desktop
-pacman -S xorg plasma plasma-wayland-session kde-applications
-systemctl enable sddm.service
-systemctl enable NetworkManager.service
 ```
+
+2. Install the packages:
+
+```bash
+# Installing KDE Plasma desktop
+pacman -S --needed xorg sddm
+pacman -S --needed plasma kde-applications
+```
+
+3. Enable display server and network:
+
+```bash
+sudo systemctl enable sddm.service
+sudo systemctl enable NetworkManager.service
+```
+
+6. The Linux kernel includes open-source video drivers and support for hardware accelerated framebuffers. However, userland support is required for OpenGL and 2D acceleration in X11:
+
+- First, identify the graphics card (the Subsystem output shows the specific model):
+
+```bash
+lspci -v | grep -A1 -e VGA -e 3D
+```
+
+- Install an appropriate driver. You can search the package database for a complete list of open-source video drivers: <https://wiki.archlinux.org/index.php/xorg#Driver_installation>
+
+```bash
+# Search at pacman
+pacman -Ss xf86-video
+
+# Install the correct one
+pacman -S xf86-video-intel
+```
+
+7. Configure sddm and reboot:
+
+```bash
+# To change manual configuration at theme
+sudo nano /usr/lib/sddm/sddm.conf.d/default.conf
+
+# Last steps
+sudo systemctl reboot
+```
+
+8. Install wifi drivers:
+
 ```bash
 # Configure internet connection
-pacman –S wget 
-pacman –S b43-fwcutter 
-export FIRMWARE_INSTALL_DIR="/lib/firmware" 
-wget https://www.lwfinger.com/b43-firmware/broadcom-wl-5.100.138.tar.bz2 
-tar xjf broadcom-wl-5.100.138.tar.bz2 
-b43-fwcutter -w "$FIRMWARE_INSTALL_DIR" broadcom-wl-5.100.138/linux/wl_apsta.o 
-pacman –S wireless_tools wpa_supplicant wifi-menu dialog 
-wifi-menu 
-ping google.com 
+pacman –S b43-fwcutter
+export FIRMWARE_INSTALL_DIR="/lib/firmware"
+wget https://www.lwfinger.com/b43-firmware/broadcom-wl-5.100.138.tar.bz2
+tar xjf broadcom-wl-5.100.138.tar.bz2
+sudo b43-fwcutter -w "$FIRMWARE_INSTALL_DIR" broadcom-wl-5.100.138/linux/wl_apsta.o
+pacman –S wireless_tools wpa_supplicant dialog
 ```
-```bash
-# Last steps
-exit
-shutdown now
-```
-7. Remove USB stick
 
-## Customize your Arch
-_to be done_
+## Customize your Arch with KDE
 
-Reference: https://www.tecmint.com/i3-tiling-window-manager/amp/
-Reference: https://onedrive.live.com/redir?resid=C2A4D66CC7C39237%21401315&page=Edit&wd=target%28DEVOPS.one%7Cd8285422-ec2d-4ab3-881c-3a783cf0fdb1%2FINSTALL%20AND%20SETUP%20ARCH%20LINUX%20DEVELOPMENT%20ENV%7C5e289956-c1a6-4ca4-ad85-6ea27fdcc758%2F%29
+- Right button at panel > Edit panel...
+- Drag Screen edge and drop upper limit of the screen
+- Panel height: 22
+- sudo pacman -S latte-dock
+- System settings > Global theme, select Breeze and click in Apply
+- Download the theme Breeze Legacy at Plasma style
+- Download MacOS Sierra CT icon theme
+- App styles > Window decoration > Download Arc-OSX-aurorae
+- Titlebar Buttons > remove the two buttons of the left side
+- Drag and drop close, minimize and maximize buttons to the left side
+- Open Latte Dock > click right button > Dock Settings
+- Visibility > Dodge All Windows
+- Appearance > Active Advanced
+- Right button at panel > Add Widget... > Menu Global
+
+_Tutorial for i3: <https://www.tecmint.com/i3-tiling-window-manager/amp/>_
