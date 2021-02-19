@@ -138,6 +138,9 @@ pacman -S xf86-video-intel
 # To change manual configuration at theme
 sudo nano /usr/lib/sddm/sddm.conf.d/default.conf
 
+# In theme add
+Current=breeze
+
 # Last steps
 sudo systemctl reboot
 ```
@@ -156,19 +159,41 @@ pacman –S wireless_tools wpa_supplicant dialog
 
 ## Customize your Arch with KDE
 
-- Right button at panel > Edit panel...
-- Drag Screen edge and drop upper limit of the screen
-- Panel height: 22
+- In System settings:
+  - Show menu > Configure > Show in icons
+  - Plasma Style > Install Layan and select it
+  - App Styles > Window decoration > Download Arc-OSX-aurorae > Select dark version
+    - Click Edit at Arc Dark > Button Size: Tiny
+  - In tab Titlebar Buttons > remove the two buttons of the left side
+    - Drag and drop close, minimize and maximize buttons to the left side
+  - Icons > Download Ghost Flat and select
+  - Screen Behavior > Screen Locking > Appearance > Select Fluxo
+- In Panel:
+  - Right Click > Add Widget...
+    - Add Global Menu
+  - Right button click > Edit panel...
+    - Drag Screen edge and drop upper limit of the screen
+    - Panel height: 22
+    - Remove desktop button
+    - Add spacer between global menu and notification widget
+  - Right click at notification > Settings > Entries:
+    - Vault: Always hidden
+    - Clipper: Always hidden
+    - Battery: Always shown
+    - Volume Control: Always hidden
+    - Volume Audio: Always shown
+  - Right Click at launcher > Show Alternatives > Application Menu
+- Open Dolphin:
+  - Hide Recent and Search For sessions
+  - Right Click at Toolbar:
+    - Text Position: Icons Only
 - sudo pacman -S latte-dock
-- System settings > Global theme, select Breeze and click in Apply
-- Download the theme Breeze Legacy at Plasma style
-- Download MacOS Sierra CT icon theme
-- App styles > Window decoration > Download Arc-OSX-aurorae
-- Titlebar Buttons > remove the two buttons of the left side
-- Drag and drop close, minimize and maximize buttons to the left side
-- Open Latte Dock > click right button > Dock Settings
-- Visibility > Dodge All Windows
-- Appearance > Active Advanced
-- Right button at panel > Add Widget... > Menu Global
+  - Open Latte Dock:
+    - Right click > Add Widgets:
+      - Add Trash Can > ok
+    - Right click > Dock Settings:
+      - Remove Clock
+      - Visibility > Dodge All Windows
+      - Appearance > Active Advanced
 
 _Tutorial for i3: <https://www.tecmint.com/i3-tiling-window-manager/amp/>_
