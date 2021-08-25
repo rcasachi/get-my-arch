@@ -197,3 +197,5 @@ pacman –S wireless_tools wpa_supplicant dialog
       - Appearance > Active Advanced
 
 _Tutorial for i3: <https://www.tecmint.com/i3-tiling-window-manager/amp/>_
+
+_Set my vim for typescript development: https://thoughtbot.com/blog/modern-typescript-and-react-development-in-vim_
